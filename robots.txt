@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+# Staging: enable indexing after HTTPS, leads and QA are complete.
