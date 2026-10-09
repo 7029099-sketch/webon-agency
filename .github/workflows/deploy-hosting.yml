@@ -26,27 +26,32 @@ jobs:
           grep -Eqi 'noindex' index.html
           grep -Eq '^Disallow: /$' robots.txt
           echo "Staging safeguards present."
-      - name: Configure verified SSH
+      - name: Configure known SSH host
         env:
-          DEPLOY_KEY: ${{ secrets.WEBON_AGENCY_SSH_PRIVATE_KEY }}
           KNOWN_HOSTS: ${{ secrets.WEBON_AGENCY_SSH_KNOWN_HOSTS }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$DEPLOY_KEY" || { echo 'Missing SSH private key secret'; exit 1; }
-          test -n "$KNOWN_HOSTS" || { echo 'Missing verified SSH known_hosts secret'; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo 'Missing SSH known_hosts secret'; exit 1; }
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/webon_agency
-          chmod 600 ~/.ssh/webon_agency
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+      - name: Install password SSH deployment tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
       - name: Upload WebON Agency only
+        env:
+          SSH_PASSWORD: ${{ secrets.WEBON_AGENCY_SSH_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
-          rsync -avz --checksum \
+          test -n "$SSH_PASSWORD" || { echo 'Missing WEBON_AGENCY_SSH_PASSWORD secret'; exit 1; }
+          export SSHPASS="$SSH_PASSWORD"
+          sshpass -e rsync -avz --checksum \
             --exclude='.git/' --exclude='.github/' --exclude='README.md' \
-            -e "ssh -i $HOME/.ssh/webon_agency -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -p 22" \
+            -e "ssh -p 22 -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes" \
             ./ bb471191@bb471191.ftp.tools:/home/bb471191/webon.agency/www/
       - name: Check public staging page
         shell: bash
