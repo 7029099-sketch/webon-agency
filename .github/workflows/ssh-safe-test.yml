@@ -1,0 +1,51 @@
+name: WebON Agency SSH and Safe Deploy Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ssh-and-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Install SSH tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass
+
+      - name: Verify pinned SSH host and credentials
+        env:
+          KNOWN_HOSTS: ${{ secrets.WEBON_AGENCY_SSH_KNOWN_HOSTS }}
+          SSH_PASSWORD: ${{ secrets.WEBON_AGENCY_SSH_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KNOWN_HOSTS" || { echo "Missing WEBON_AGENCY_SSH_KNOWN_HOSTS"; exit 1; }
+          test -n "$SSH_PASSWORD" || { echo "Missing WEBON_AGENCY_SSH_PASSWORD"; exit 1; }
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          export SSHPASS="$SSH_PASSWORD"
+          sshpass -e ssh -p 22 -o BatchMode=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o ConnectTimeout=12 bb471191@bb471191.ftp.tools \
+            'test -d /home/bb471191/webon.agency/www && echo "SSH OK: WebON Agency directory exists"'
+
+      - name: Upload harmless probe file (never overwrite site)
+        env:
+          SSH_PASSWORD: ${{ secrets.WEBON_AGENCY_SSH_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf 'WEBON_AGENCY_SAFE_DEPLOY_TEST_OK\n' > /tmp/webon-agency-deploy-probe.txt
+          export SSHPASS="$SSH_PASSWORD"
+          sshpass -e scp -P 22 -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes \
+            /tmp/webon-agency-deploy-probe.txt \
+            bb471191@bb471191.ftp.tools:/home/bb471191/webon.agency/www/webon-agency-deploy-probe.txt
+
+      - name: Verify public test file
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --max-time 20 \
+            https://webon.agency/webon-agency-deploy-probe.txt -o /tmp/public-probe.txt
+          grep -Fxq 'WEBON_AGENCY_SAFE_DEPLOY_TEST_OK' /tmp/public-probe.txt
+          echo "PASS: GitHub can connect and publish a file without replacing the website."
