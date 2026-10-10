@@ -132,6 +132,22 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLeadModal();
 });
 
+const contactMethodSelect = document.getElementById('leadContactMethod');
+const leadPhoneInput = document.getElementById('leadPhone');
+const leadPhoneLabel = document.getElementById('leadPhoneLabel');
+if (contactMethodSelect && leadPhoneInput && leadPhoneLabel) {
+  const updateContact = () => {
+    const method = contactMethodSelect.value;
+    const isEmail = method === 'Email';
+    leadPhoneLabel.textContent = (isEmail ? 'Your email' : method === 'Telegram' ? 'Telegram username or phone' : method + ' phone number') + ' *';
+    leadPhoneInput.placeholder = isEmail ? 'you@company.com' : method === 'Telegram' ? '@username or +1 555 123 4567' : '+1 555 123 4567';
+    leadPhoneInput.type = isEmail ? 'email' : 'text';
+    leadPhoneInput.setAttribute('autocomplete',isEmail?'email':'off');
+  };
+  contactMethodSelect.addEventListener('change',updateContact);
+  updateContact();
+}
+
 const leadForm = document.getElementById('leadForm');
 if (leadForm) {
   leadForm.addEventListener('submit', async e => {
@@ -139,6 +155,7 @@ if (leadForm) {
 
     const name = document.getElementById('leadName')?.value.trim() || '';
     const phone = document.getElementById('leadPhone')?.value.trim() || '';
+    const contactMethod = document.getElementById('leadContactMethod')?.value || 'Telegram';
     const siteType = document.getElementById('leadSiteType')?.value || '';
     const budget = document.getElementById('leadBudget')?.value || '';
     const packageName = document.getElementById('leadPackage')?.value || '';
@@ -149,8 +166,8 @@ if (leadForm) {
     const consent = document.getElementById('leadConsent')?.checked || false;
     const submitBtn = leadForm.querySelector('button[type="submit"]');
 
-    if (!name || !phone || !siteType || !consent) {
-      alert('Please enter your name, email or Telegram, website type, and accept the privacy policy.');
+    if (!name || !phone || !contactMethod || !siteType || !consent) {
+      alert('Please enter your name, preferred contact, service, and accept the privacy policy.');
       return;
     }
 
@@ -172,6 +189,7 @@ if (leadForm) {
       const payload = new URLSearchParams({
         name,
         phone,
+        destination: contactMethod,
         site_type: siteType,
         budget,
         package: packageName,
