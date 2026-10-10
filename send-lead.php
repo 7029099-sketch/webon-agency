@@ -74,6 +74,16 @@ function webon_uuid() {
     return substr($hex,0,8).'-'.substr($hex,8,4).'-'.substr($hex,12,4).'-'.substr($hex,16,4).'-'.substr($hex,20);
 }
 function webon_config() {
+    // Reuse the private WebON Agency bot and group for the lead form.
+    $privatePath = dirname(dirname(__DIR__)) . '/webon-chat-config.php';
+    if (is_file($privatePath)) {
+        $private = include $privatePath;
+        if (is_array($private)) {
+            $token = trim((string)(isset($private['bot_token']) ? $private['bot_token'] : ''));
+            $chatId = trim((string)(isset($private['chat_id']) ? $private['chat_id'] : ''));
+            if ($token !== '' && $chatId !== '') return array($token, $chatId, true);
+        }
+    }
     $configPath = __DIR__ . '/telegram-config.php';
     if (!is_file($configPath)) return array('', '', false);
     $beforeVars = array_keys(get_defined_vars());
