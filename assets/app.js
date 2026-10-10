@@ -150,7 +150,7 @@ if (leadForm) {
     const submitBtn = leadForm.querySelector('button[type="submit"]');
 
     if (!name || !phone || !siteType || !budget || !consent) {
-      alert('Заполните имя, контакт, тип сайта, бюджет и подтвердите согласие.');
+      alert('Please enter your name, online contact, website type, budget, and accept the privacy policy.');
       return;
     }
 
@@ -162,10 +162,10 @@ if (leadForm) {
     const content = attribution.utm_content || '';
     const gclid = attribution.gclid || '';
 
-    const oldText = submitBtn?.textContent || 'Отправить заявку';
+    const oldText = submitBtn?.textContent || 'Send request';
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Отправляем...';
+      submitBtn.textContent = 'Sending...';
     }
 
     try {
