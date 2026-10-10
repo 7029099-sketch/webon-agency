@@ -14,6 +14,15 @@ $chat=(string)($config['chat_id']??'');
 $secret=(string)($config['webhook_secret']??'');
 $ready=$bot!==''&&$chat!==''&&$secret!==''&&function_exists('curl_init');
 $storage=dirname(dirname(__DIR__)).'/webon-chat-data';
+if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && isset($_GET['setup'])) {
+  if(!$ready || !hash_equals($secret,(string)$_GET['setup'])) respond(['ok'=>false,'error'=>'Access denied'],403);
+  $url='https://webon.agency/chat-api.php?hook='.rawurlencode($secret);
+  $h=curl_init('https://api.telegram.org/bot'.$bot.'/setWebhook');
+  curl_setopt_array($h,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>http_build_query(['url'=>$url,'allowed_updates'=>json_encode(['message'])]),CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_SSL_VERIFYPEER=>true]);
+  $out=curl_exec($h);$status=curl_getinfo($h,CURLINFO_HTTP_CODE);curl_close($h);
+  $result=is_string($out)?json_decode($out,true):null;
+  respond(['ok'=>$status===200 && is_array($result) && !empty($result['ok']), 'telegram_status'=>$status],$status===200?200:502);
+}
 if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && !isset($_GET['messages'])) respond(['ok'=>true,'ready'=>$ready]);
 if(!$ready) respond(['ok'=>false,'error'=>'Chat is not configured'],503);
 if(!is_dir($storage) && !@mkdir($storage,0700,true)) respond(['ok'=>false,'error'=>'Chat storage unavailable'],503);
