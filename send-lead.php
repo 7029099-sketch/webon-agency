@@ -203,7 +203,7 @@ if ($device === '' && $userAgent !== '') {
 $lang = webon_first($data, array('lang'));
 $clientTime = webon_first($data, array('client_time'));
 
-if ($eventType === 'lead' && ($name === '' || $phone === '')) webon_json(array('ok'=>false,'error'=>'Name and phone are required'), 422);
+if ($eventType === 'lead' && ($name === '' || $phone === '')) webon_json(array('ok'=>false,'error'=>'Name and online contact are required'), 422);
 
 $source = $utmSource; $medium = $utmMedium;
 if ($source === '' && ($gclid !== '' || $gbraid !== '' || $wbraid !== '')) { $source='google'; if ($medium==='') $medium='cpc'; }
@@ -251,7 +251,7 @@ $lines[] = $brandEmoji . ' Новая заявка ' . $brand;
 $lines[] = '🆔 ' . $id;
 $lines[] = '';
 $lines[] = '👤 Имя: ' . $name;
-$lines[] = '📞 Контакт: ' . $phone;
+$lines[] = '💬 Online contact: ' . $phone;
 if ($service !== '') $lines[] = '🎬 Услуга: ' . $service;
 if ($package !== '') $lines[] = '📦 Пакет: ' . $package . ($packagePrice !== '' ? ' · ' . $packagePrice : '');
 if ($siteType !== '') $lines[] = '🖥 Какой сайт: ' . $siteType;
