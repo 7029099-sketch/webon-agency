@@ -289,9 +289,8 @@ if ($brand === 'WebON' && $eventType === 'lead') {
             'X-Auto-Response-Suppress: All'
         );
         $emailDelivered = @mail($emailRecipient, 'New WebON Agency Lead ' . $id, $emailBody, implode("\r\n", $emailHeaders));
-        if ($emailDelivered) {
-            webon_json(array('ok'=>true,'stored'=>$stored,'delivered'=>true,'channel'=>'email','id'=>$id,'service'=>'WebON Leads'));
-        }
+        // Email is only a secondary notification. Never skip Telegram delivery.
+        // PHP mail() true means accepted for local delivery, not received by the owner.
     }
 }
 if ($tgToken === '' || $tgChatId === '') webon_json(array('ok'=>false,'stored'=>$stored,'id'=>$id,'error'=>'Telegram configuration is incomplete'), 500);
