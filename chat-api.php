@@ -23,6 +23,26 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && isset($_GET['setup'])) {
   $result=is_string($out)?json_decode($out,true):null;
   respond(['ok'=>$status===200 && is_array($result) && !empty($result['ok']), 'telegram_status'=>$status],$status===200?200:502);
 }
+if(($_SERVER['REQUEST_METHOD']??'')==='POST' && isset($_GET['discover'])) {
+  $input=json_decode((string)file_get_contents('php://input'),true);
+  $provided=is_array($input)?(string)($input['setup_key']??''):'';
+  if($bot==='' || $secret==='' || !hash_equals($secret,$provided) || !function_exists('curl_init')) respond(['ok'=>false,'error'=>'Invalid setup key or bot configuration'],403);
+  $h=curl_init('https://api.telegram.org/bot'.$bot.'/getUpdates');
+  curl_setopt_array($h,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>http_build_query(['timeout'=>0,'limit'=>100,'allowed_updates'=>json_encode(['message','my_chat_member'])]),CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>12,CURLOPT_SSL_VERIFYPEER=>true]);
+  $raw=curl_exec($h);$http=(int)curl_getinfo($h,CURLINFO_HTTP_CODE);curl_close($h);
+  $data=is_string($raw)?json_decode($raw,true):null;
+  if($http!==200 || !is_array($data) || empty($data['ok']))respond(['ok'=>false,'error'=>'Telegram updates unavailable; webhook may already be active'],502);
+  $groups=[];
+  foreach(($data['result']??[]) as $update) {
+    $m=$update['message']??($update['my_chat_member']??[]);
+    $c=$m['chat']??[];
+    if(in_array(($c['type']??''),['group','supergroup'],true)) {
+      $id=(string)($c['id']??'');
+      if($id!=='')$groups[$id]=['id'=>$id,'title'=>(string)($c['title']??''),'type'=>(string)($c['type']??'')];
+    }
+  }
+  respond(['ok'=>true,'groups'=>array_values($groups),'hint'=>count($groups)?'Copy the ID for WebON Agency':'Send /start addressed to the bot inside the group, then retry']);
+}
 if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && !isset($_GET['messages'])) respond(['ok'=>true,'ready'=>$ready]);
 if(!$ready) respond(['ok'=>false,'error'=>'Chat is not configured'],503);
 if(!is_dir($storage) && !@mkdir($storage,0700,true)) respond(['ok'=>false,'error'=>'Chat storage unavailable'],503);
