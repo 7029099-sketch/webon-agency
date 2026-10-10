@@ -149,8 +149,8 @@ if (leadForm) {
     const consent = document.getElementById('leadConsent')?.checked || false;
     const submitBtn = leadForm.querySelector('button[type="submit"]');
 
-    if (!name || !phone || !siteType || !budget || !consent) {
-      alert('Please enter your name, online contact, website type, budget, and accept the privacy policy.');
+    if (!name || !phone || !siteType || !consent) {
+      alert('Please enter your name, email or Telegram, website type, and accept the privacy policy.');
       return;
     }
 
