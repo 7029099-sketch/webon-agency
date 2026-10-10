@@ -1595,7 +1595,7 @@
 <div id="leadFormView">
 <div class="modal-kicker">WebON · project request</div>
 <h2>Tell us what website you need</h2>
-<p class="modal-intro">A few quick questions. Send your project details using our contact form. We will review your request.</p>
+<p class="modal-intro">Choose a website type, share your contact and tell us about your project. We reply online.</p>
 <form id="leadForm" action="/send-lead.php" method="post" accept-charset="UTF-8">
 <div class="selected-plan" hidden="" id="selectedPlan">
 <span>Selected package</span>
@@ -1606,17 +1606,17 @@
 <input id="leadPackagePrice" name="package_price" type="hidden" value=""/>
 <div class="form-grid">
 <div class="field">
-<label for="leadName">Name *</label>
-<input autocomplete="name" id="leadName" name="name" placeholder="Your name" required=""/>
+<label for="leadName">Your name *</label>
+<input autocomplete="name" id="leadName" name="name" placeholder="Your name" required />
 </div>
 <div class="field">
-<label for="leadPhone">Telegram username or email *</label>
-<input autocomplete="off" id="leadPhone" name="phone" placeholder="@username or you@example.com" required="" type="text"/>
+<label for="leadPhone">Email or Telegram *</label>
+<input autocomplete="email" id="leadPhone" name="phone" placeholder="you@example.com or @username" required type="text" />
 </div>
-<div class="field">
-<label for="leadSiteType">What website do you need? *</label>
-<select id="leadSiteType" name="site_type" required="">
-<option disabled="" selected="" value="">Choose an option</option>
+<div class="field field-wide">
+<label for="leadSiteType">What do you need? *</label>
+<select id="leadSiteType" name="site_type" required>
+<option disabled selected value="">Select a service</option>
 <option>Landing page / one-page website</option>
 <option>Company / corporate website</option>
 <option>E-commerce store</option>
@@ -1625,45 +1625,27 @@
 <option>Not sure yet, need advice</option>
 </select>
 </div>
-<div class="field">
-<label for="leadBudget">Estimated budget *</label>
-<select id="leadBudget" name="budget" required="">
-<option disabled="" selected="" value="">Choose a budget</option>
-<option>Up to $500</option>
-<option>$500–1,000</option>
-<option>$1,000–2,000</option>
-<option>$2,000+</option>
-<option>Not sure, need an estimate</option>
-</select>
-</div>
-<div class="field">
-<label for="leadDeadline">When do you need the launch?</label>
-<select id="leadDeadline" name="deadline">
-<option>As soon as possible</option>
-<option>Within 3 business days</option>
-<option>Within 1–2 weeks</option>
-<option>No urgent deadline</option>
-</select>
-</div>
 <div class="field field-wide">
-<label for="leadComment">Briefly describe the project</label>
-<textarea id="leadComment" name="comment" placeholder="For example: dental clinic website, 6 services, lead form and Google Ads launch" rows="3"></textarea>
+<label for="leadComment">Tell us about your project</label>
+<textarea id="leadComment" name="comment" placeholder="A few words about your business and the website you need" rows="3"></textarea>
 </div>
 </div>
+<input id="leadBudget" name="budget" type="hidden" value="" />
+<input id="leadDeadline" name="deadline" type="hidden" value="" />
 <input aria-hidden="true" autocomplete="off" class="hp-field" id="leadWebsite" name="website" tabindex="-1" type="text"/>
 <label class="consent">
 <input id="leadConsent" required="" type="checkbox"/>
 <span>I agree to the processing of personal data according to the <a href="/privacy.html">privacy policy</a>.</span>
 </label>
 <button class="btn primary submit lead-submit" type="submit">Send request</button>
-<div class="form-note">We communicate online via Telegram or email. No phone calls required.</div>
+<div class="form-note">Prefer live chat? We are preparing direct on-site messaging. No phone calls required.</div>
 </form>
 </div>
 <div class="lead-success" hidden="" id="leadSuccessView">
 <div class="success-icon">✓</div>
 <div class="modal-kicker">Request sent</div>
 <h2>Thank you. We got it 👌</h2>
-<p>Telegram is open with your completed request. Send the message to WebON and we will contact you using the details provided.</p>
+<p>Your request was received. We will reply using your email or Telegram contact.</p>
 <div class="success-actions">
 <button class="btn primary" data-close-modal="" type="button">Close</button>
 
