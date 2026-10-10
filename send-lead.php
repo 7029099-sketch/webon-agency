@@ -292,6 +292,7 @@ $lines[] = $brandEmoji . ' Новая заявка ' . $brand;
 $lines[] = '🆔 ' . $id;
 $lines[] = '';
 $lines[] = '👤 Имя: ' . $name;
+if ($destination !== '') $lines[] = '📲 Preferred contact: ' . $destination;
 $lines[] = '💬 Online contact: ' . $phone;
 if ($service !== '') $lines[] = '🎬 Услуга: ' . $service;
 if ($package !== '') $lines[] = '📦 Пакет: ' . $package . ($packagePrice !== '' ? ' · ' . $packagePrice : '');
