@@ -248,6 +248,7 @@ if ($eventType === 'contact_click') {
 // Only WebON form leads can use this independent email channel.
 if ($brand === 'WebON' && $eventType === 'lead') {
     $emailRecipient = trim((string)getenv('WEBON_AGENCY_LEAD_EMAIL'));
+    if ($emailRecipient === '') $emailRecipient = '7029099@gmail.com';
     if ($emailRecipient !== '' && filter_var($emailRecipient, FILTER_VALIDATE_EMAIL)) {
         $emailLines = array(
             'New WebON Agency website enquiry',
