@@ -1610,8 +1610,8 @@
 <input autocomplete="name" id="leadName" name="name" placeholder="Your name" required=""/>
 </div>
 <div class="field">
-<label for="leadPhone">Phone / Telegram *</label>
-<input autocomplete="tel" id="leadPhone" inputmode="tel" name="phone" placeholder="+38..." required="" type="tel"/>
+<label for="leadPhone">Telegram username or email *</label>
+<input autocomplete="off" id="leadPhone" name="phone" placeholder="@username or you@example.com" required="" type="text"/>
 </div>
 <div class="field">
 <label for="leadSiteType">What website do you need? *</label>
@@ -1656,7 +1656,7 @@
 <span>I agree to the processing of personal data according to the <a href="/privacy.html">privacy policy</a>.</span>
 </label>
 <button class="btn primary submit lead-submit" type="submit">Send request</button>
-<div class="form-note">We usually reply via Telegram or phone.</div>
+<div class="form-note">We communicate online via Telegram or email. No phone calls required.</div>
 </form>
 </div>
 <div class="lead-success" hidden="" id="leadSuccessView">
