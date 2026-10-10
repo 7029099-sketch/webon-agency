@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://webon.agency/</loc></url>
+  <url><loc>https://webon.agency/about.html</loc></url>
+  <url><loc>https://webon.agency/analytics.html</loc></url>
+  
+  
+  <url><loc>https://webon.agency/cases.html</loc></url>
+  <url><loc>https://webon.agency/contacts.html</loc></url>
+  <url><loc>https://webon.agency/corporate-website.html</loc></url>
+  <url><loc>https://webon.agency/google-ads.html</loc></url>
+  <url><loc>https://webon.agency/landing-page.html</loc></url>
+  <url><loc>https://webon.agency/meta-ads.html</loc></url>
   <url><loc>https://webon.agency/privacy.html</loc></url>
+  <url><loc>https://webon.agency/seo-ai-search.html</loc></url>
+  <url><loc>https://webon.agency/seo-for-business.html</loc></url>
+  <url><loc>https://webon.agency/seo-promotion.html</loc></url>
+  <url><loc>https://webon.agency/web-development.html</loc></url>
+  <url><loc>https://webon.agency/website-for-services.html</loc></url>
+  <url><loc>https://webon.agency/website-with-admin.html</loc></url>
+  
 </urlset>

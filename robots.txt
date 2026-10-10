@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
-
+Disallow: /send-lead.php
+Disallow: /telegram-config.php
 Sitemap: https://webon.agency/sitemap.xml
