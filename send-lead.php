@@ -243,6 +243,46 @@ if ($eventType === 'contact_click') {
     webon_json(array('ok'=>true,'stored'=>$stored,'id'=>$id,'event_type'=>'contact_click'));
 }
 
+// WebON Agency email delivery: set WEBON_AGENCY_LEAD_EMAIL in hosting environment.
+// No mailbox credentials or client-provided values are embedded in the repository.
+// Only WebON form leads can use this independent email channel.
+if ($brand === 'WebON' && $eventType === 'lead') {
+    $emailRecipient = trim((string)getenv('WEBON_AGENCY_LEAD_EMAIL'));
+    if ($emailRecipient !== '' && filter_var($emailRecipient, FILTER_VALIDATE_EMAIL)) {
+        $emailLines = array(
+            'New WebON Agency website enquiry',
+            'Lead ID: ' . $id,
+            'Name: ' . $name,
+            'Contact: ' . $phone,
+            'Service: ' . $service,
+            'Website type: ' . $siteType,
+            'Budget: ' . $budget,
+            'Deadline: ' . $deadline,
+            'Message: ' . $comment,
+            'Package: ' . $package,
+            'Source: ' . $source,
+            'Medium: ' . $medium,
+            'Campaign: ' . $utmCampaign,
+            'Term: ' . $utmTerm,
+            'GCLID: ' . $gclid,
+            'Landing: ' . $landingPage,
+            'Page: ' . $page,
+            'Created at: ' . $serverTime
+        );
+        $emailBody = implode("\r\n", array_map(function($line) {
+            return preg_replace('/[\r\n]+/', ' ', $line);
+        }, $emailLines));
+        $emailHeaders = array(
+            'From: WebON Leads <no-reply@webon.agency>',
+            'Content-Type: text/plain; charset=UTF-8',
+            'X-Auto-Response-Suppress: All'
+        );
+        $emailDelivered = @mail($emailRecipient, 'New WebON Agency Lead ' . $id, $emailBody, implode("\r\n", $emailHeaders));
+        if ($emailDelivered) {
+            webon_json(array('ok'=>true,'stored'=>$stored,'delivered'=>true,'channel'=>'email','id'=>$id,'service'=>'WebON Leads'));
+        }
+    }
+}
 if ($tgToken === '' || $tgChatId === '') webon_json(array('ok'=>false,'stored'=>$stored,'id'=>$id,'error'=>'Telegram configuration is incomplete'), 500);
 
 $brandEmoji = ($brand === 'VideoLive') ? '🔴' : (($brand === 'LiveON') ? '🟡' : '🔵');
