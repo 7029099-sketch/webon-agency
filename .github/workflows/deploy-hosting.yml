@@ -1,6 +1,18 @@
 name: Deploy WebON Agency to ADM.tools
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.html'
+      - '*.php'
+      - 'assets/**'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'favicon*'
+      - 'apple-touch-icon.png'
+      - '.github/workflows/deploy-hosting.yml'
 
 permissions:
   contents: read
