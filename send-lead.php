@@ -92,12 +92,12 @@ function webon_config() {
         if ($chatId === '') { $v = webon_find_array_value($returnedConfig, array('chat_id','chatid','telegram_chat_id','target_chat_id')); if ($v !== null) $chatId = $v; }
     }
     if ($token === '') {
-        foreach (array('botToken','bot_token','telegramToken','telegram_token','telegramBotToken','telegram_bot_token','token') as $v) {
+        foreach (array('WEBON_TELEGRAM_BOT_TOKEN','botToken','bot_token','telegramToken','telegram_token','telegramBotToken','telegram_bot_token','token') as $v) {
             if (isset($afterVars[$v]) && is_scalar($afterVars[$v]) && trim((string)$afterVars[$v]) !== '') { $token = trim((string)$afterVars[$v]); break; }
         }
     }
     if ($chatId === '') {
-        foreach (array('chatId','chat_id','telegramChatId','telegram_chat_id','targetChatId','target_chat_id') as $v) {
+        foreach (array('WEBON_TELEGRAM_CHAT_ID','chatId','chat_id','telegramChatId','telegram_chat_id','targetChatId','target_chat_id') as $v) {
             if (isset($afterVars[$v]) && is_scalar($afterVars[$v]) && trim((string)$afterVars[$v]) !== '') { $chatId = trim((string)$afterVars[$v]); break; }
         }
     }
