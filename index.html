@@ -1594,8 +1594,8 @@
 <button aria-label="Close" class="close" data-close-modal="" type="button">×</button>
 <div id="leadFormView">
 <div class="modal-kicker">WebON · project request</div>
-<h2>Tell us what website you need</h2>
-<p class="modal-intro">Choose a website type, share your contact and tell us about your project. We reply online.</p>
+<h2>Let’s discuss your project</h2>
+<p class="modal-intro">Choose how to contact you, what you need, and leave a short message.</p>
 <form id="leadForm" action="/send-lead.php" method="post" accept-charset="UTF-8">
 <div class="selected-plan" hidden="" id="selectedPlan">
 <span>Selected package</span>
@@ -1610,8 +1610,17 @@
 <input autocomplete="name" id="leadName" name="name" placeholder="Your name" required />
 </div>
 <div class="field">
-<label for="leadPhone">Email or Telegram *</label>
-<input autocomplete="email" id="leadPhone" name="phone" placeholder="you@example.com or @username" required type="text" />
+<label for="leadContactMethod">Preferred contact method *</label>
+<select id="leadContactMethod" name="contact_method" required>
+<option value="Telegram">Telegram</option>
+<option value="WhatsApp">WhatsApp</option>
+<option value="Viber">Viber</option>
+<option value="Email">Email</option>
+</select>
+</div>
+<div class="field">
+<label for="leadPhone" id="leadPhoneLabel">Telegram username or phone *</label>
+<input autocomplete="off" id="leadPhone" name="phone" placeholder="@username or +1 555 123 4567" required type="text" />
 </div>
 <div class="field field-wide">
 <label for="leadSiteType">What do you need? *</label>
@@ -1638,14 +1647,14 @@
 <span>I agree to the processing of personal data according to the <a href="/privacy.html">privacy policy</a>.</span>
 </label>
 <button class="btn primary submit lead-submit" type="submit">Send request</button>
-<div class="form-note">Prefer live chat? We are preparing direct on-site messaging. No phone calls required.</div>
+<div class="form-note">We will contact you through your selected messenger or email.</div>
 </form>
 </div>
 <div class="lead-success" hidden="" id="leadSuccessView">
 <div class="success-icon">✓</div>
 <div class="modal-kicker">Request sent</div>
 <h2>Thank you. We got it 👌</h2>
-<p>Your request was received. We will reply using your email or Telegram contact.</p>
+<p>Your request was received. We will reply using your preferred contact method.</p>
 <div class="success-actions">
 <button class="btn primary" data-close-modal="" type="button">Close</button>
 
