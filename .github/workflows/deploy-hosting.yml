@@ -12,61 +12,73 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Checkout site
         uses: actions/checkout@v4
 
-      - name: Check ready-to-deploy site
+      - name: Validate English site and isolate domains
         shell: bash
         run: |
           set -euo pipefail
           test -f index.html
-          test -f sitemap.xml
           test -f robots.txt
-          test -d assets
-          grep -qi 'webon.agency' index.html
-          grep -qi '<html[^>]*lang="en"' index.html
+          test -f sitemap.xml
+          test -f send-lead.php
+          test -f assets/style.css
+          test -f landing-page.html
+          test -f corporate-website.html
+          test -f web-development.html
           test ! -f .deploy-blocked
+          grep -Eqi '<html[^>]+lang="en"' index.html
+          grep -Fq 'https://webon.agency/' index.html
+          grep -Fq 'https://webon.agency/sitemap.xml' robots.txt
           if grep -REqi 'https?://([^/" ]+\.)?(webon\.com\.ua|liveon\.com\.ua|videolive\.com\.ua)' --include='*.html' --include='*.css' --include='*.js' .; then
-            echo 'Unexpected Ukrainian-site link found; aborting deployment.'
+            echo 'Blocked: cross-site technical link found'
             exit 1
           fi
+          php -l send-lead.php
+          echo "English-site validation passed"
 
-      - name: Set up verified SSH host
-        shell: bash
+      - name: Configure pinned SSH host
         env:
           KNOWN_HOSTS: ${{ secrets.WEBON_AGENCY_SSH_KNOWN_HOSTS }}
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "$KNOWN_HOSTS" || { echo 'Set WEBON_AGENCY_SSH_KNOWN_HOSTS in Actions secrets'; exit 1; }
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          test -n "$KNOWN_HOSTS" || { echo 'Missing SSH known hosts secret'; exit 1; }
+          install -d -m 700 ~/.ssh
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Install deployment tools
+      - name: Install deployment utilities
+        shell: bash
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq sshpass rsync
 
-      - name: Deploy to WebON Agency only
-        shell: bash
+      - name: Deploy only WebON Agency files
         env:
           SSH_PASSWORD: ${{ secrets.WEBON_AGENCY_SSH_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "$SSH_PASSWORD" || { echo 'Set WEBON_AGENCY_SSH_PASSWORD in Actions secrets'; exit 1; }
+          test -n "$SSH_PASSWORD" || { echo 'Missing SSH password secret'; exit 1; }
           export SSHPASS="$SSH_PASSWORD"
           sshpass -e rsync -avz --checksum \
             --exclude='.git/' --exclude='.github/' --exclude='README.md' \
-            -e "ssh -p 22 -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes" \
+            --exclude='.deploy-blocked' \
+            --exclude='telegram-config.php' --exclude='private-leads/' \
+            --exclude='webon-agency-deploy-probe.txt' \
             ./ bb471191@bb471191.ftp.tools:/home/bb471191/webon.agency/www/
+          echo 'Uploaded files without deleting existing server files or private configuration'
 
-      - name: Verify public website
+      - name: Verify live English website
         shell: bash
         run: |
           set -euo pipefail
           curl -fLsS --retry 3 --max-time 30 https://webon.agency/ -o /tmp/webon-agency.html
           grep -qi 'webon' /tmp/webon-agency.html
-          curl -fLsS --max-time 30 https://webon.agency/robots.txt -o /tmp/webon-robots.txt
-          echo 'WebON Agency public site reachable.'
+          curl -fLsS --max-time 30 https://webon.agency/robots.txt -o /tmp/robots.txt
+          curl -fLsS --max-time 30 https://webon.agency/landing-page.html -o /tmp/landing.html
+          echo 'WebON Agency deployment verified'
