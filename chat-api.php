@@ -14,15 +14,32 @@ $chat=(string)($config['chat_id']??'');
 $secret=(string)($config['webhook_secret']??'');
 $ready=$bot!==''&&$chat!==''&&$secret!==''&&function_exists('curl_init');
 $storage=dirname(dirname(__DIR__)).'/webon-chat-data';
-if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && isset($_GET['setup'])) {
-  if(!$ready || !hash_equals($secret,(string)$_GET['setup'])) respond(['ok'=>false,'error'=>'Access denied'],403);
-  $url='https://webon.agency/chat-api.php?hook='.rawurlencode($secret);
-  $h=curl_init('https://api.telegram.org/bot'.$bot.'/setWebhook');
-  curl_setopt_array($h,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>http_build_query(['url'=>$url,'allowed_updates'=>json_encode(['message'])]),CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_SSL_VERIFYPEER=>true]);
-  $out=curl_exec($h);$status=curl_getinfo($h,CURLINFO_HTTP_CODE);curl_close($h);
-  $result=is_string($out)?json_decode($out,true):null;
-  respond(['ok'=>$status===200 && is_array($result) && !empty($result['ok']), 'telegram_status'=>$status],$status===200?200:502);
+// Owner-only webhook setup. The private key is submitted via POST, never in a URL.
+if(($_SERVER['REQUEST_METHOD']??'')==='POST' && isset($_GET['webhook_admin'])) {
+  $input=json_decode((string)file_get_contents('php://input'),true);
+  $provided=is_array($input)?(string)($input['setup_key']??''):'';
+  if(!$ready || $provided==='' || !hash_equals($secret,$provided)) respond(['ok'=>false,'error'=>'Invalid setup key or incomplete bot settings'],403);
+  $action=(string)($input['action']??'status');
+  if(!in_array($action,['status','install'],true))respond(['ok'=>false,'error'=>'Unsupported action'],400);
+  $method=$action==='install'?'setWebhook':'getWebhookInfo';
+  $endpoint='https://api.telegram.org/bot'.$bot.'/'.$method;
+  $h=curl_init($endpoint);
+  $args=$action==='install'?[
+    'url'=>'https://webon.agency/chat-api.php?hook=1',
+    'secret_token'=>hash('sha256',$secret),
+    'allowed_updates'=>json_encode(['message'])
+  ]:[];
+  curl_setopt_array($h,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>http_build_query($args),CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>15,CURLOPT_SSL_VERIFYPEER=>true]);
+  $raw=curl_exec($h);$http=(int)curl_getinfo($h,CURLINFO_HTTP_CODE);curl_close($h);
+  $d=is_string($raw)?json_decode($raw,true):null;
+  if($http!==200 || !is_array($d) || empty($d['ok'])) respond(['ok'=>false,'error'=>'Telegram API rejected webhook request','telegram_status'=>$http],502);
+  if($action==='status') {
+    $info=$d['result']??[];
+    respond(['ok'=>true,'installed'=>($info['url']??'')==='https://webon.agency/chat-api.php?hook=1','pending_updates'=>$info['pending_update_count']??0,'last_error_message'=>$info['last_error_message']??null]);
+  }
+  respond(['ok'=>true,'installed'=>true]);
 }
+if(($_SERVER['REQUEST_METHOD']??'GET')==='GET' && isset($_GET['setup'])) respond(['ok'=>false,'error'=>'Use POST webhook_admin setup'],405);
 if(($_SERVER['REQUEST_METHOD']??'')==='POST' && isset($_GET['discover'])) {
   $input=json_decode((string)file_get_contents('php://input'),true);
   $provided=is_array($input)?(string)($input['setup_key']??''):'';
@@ -57,7 +74,9 @@ function telegram($token,$args) {
 }
 $method=$_SERVER['REQUEST_METHOD']??'GET';
 if($method==='POST' && isset($_GET['hook'])) {
-  if(!hash_equals($secret,(string)$_GET['hook']))respond(['ok'=>false],403);
+  $header=(string)($_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN']??'');
+  $legacy=hash_equals($secret,(string)$_GET['hook']);
+  if(!$legacy && !hash_equals(hash('sha256',$secret),$header))respond(['ok'=>false],403);
   $update=json_decode((string)file_get_contents('php://input'),true);
   $m=is_array($update)?($update['message']??[]):[];
   if((string)($m['chat']['id']??'')!==$chat)respond(['ok'=>true]);
