@@ -163,11 +163,10 @@ if (leadForm) {
     const deadline = document.getElementById('leadDeadline')?.value || '';
     const comment = document.getElementById('leadComment')?.value.trim() || '';
     const website = document.getElementById('leadWebsite')?.value.trim() || '';
-    const consent = document.getElementById('leadConsent')?.checked || false;
     const submitBtn = leadForm.querySelector('button[type="submit"]');
 
-    if (!name || !phone || !contactMethod || !siteType || !consent) {
-      alert('Please enter your name, preferred contact, service, and accept the privacy policy.');
+    if (!name || !phone || !contactMethod || !siteType) {
+      alert('Please enter your name, preferred contact, and service.');
       return;
     }
 
