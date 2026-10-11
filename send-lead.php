@@ -125,12 +125,14 @@ function webon_config() {
     }
     return array($token, $chatId, true);
 }
-function webon_send_telegram($token, $chatId, $message) {
+function webon_send_telegram($token, $chatId, $message, $replyMarkup = null) {
     if ($token === '' || $chatId === '') return false;
     $apiBase = getenv('WEBON_TELEGRAM_API_BASE');
     if (!$apiBase) $apiBase = 'https://api.telegram.org/bot';
     $apiUrl = rtrim($apiBase, '/') . $token . '/sendMessage';
-    $payload = http_build_query(array('chat_id' => $chatId, 'text' => $message), '', '&', PHP_QUERY_RFC3986);
+    $params = array('chat_id' => $chatId, 'text' => $message);
+    if ($replyMarkup !== null) $params['reply_markup'] = json_encode($replyMarkup, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $payload = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     $http = 0; $body = '';
     if (function_exists('curl_init')) {
         $ch = curl_init($apiUrl);
@@ -323,6 +325,16 @@ if ($lang !== '') $lines[] = '🌍 Язык: ' . $lang;
 $lines[] = '🕒 Время: ' . ($clientTime !== '' ? $clientTime : $serverTime);
 $message = implode("\n", $lines);
 
-$delivered = webon_send_telegram($tgToken, $tgChatId, $message);
+$buttons = array();
+$digits = preg_replace('/[^0-9]/', '', $phone);
+if (preg_match('/^0[0-9]{9}$/', $digits)) $digits = '38' . $digits;
+if (strlen($digits) >= 10 && strlen($digits) <= 15) {
+    $buttons[] = array(array('text' => '💬 WhatsApp', 'url' => 'https://wa.me/' . $digits));
+}
+$handle = ltrim(webon_first($data, array('telegram_username','telegram_handle','telegram_user')), '@');
+if (preg_match('/^[A-Za-z][A-Za-z0-9_]{4,31}$/', $handle)) {
+    $buttons[] = array(array('text' => '✈️ Telegram', 'url' => 'https://t.me/' . $handle));
+}
+$delivered = webon_send_telegram($tgToken, $tgChatId, $message, $buttons ? array('inline_keyboard'=>$buttons) : null);
 if (!$delivered) webon_json(array('ok'=>false,'stored'=>$stored,'id'=>$id,'error'=>'Telegram delivery failed'), 502);
 webon_json(array('ok'=>true,'stored'=>$stored,'delivered'=>true,'id'=>$id,'service'=>'WebON Leads'));
