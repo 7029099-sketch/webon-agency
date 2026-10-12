@@ -1,0 +1,43 @@
+name: Daily WebON Agency SEO Health
+
+on:
+  schedule:
+    - cron: '53 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  seo-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check English pages, canonicals and sitemap
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          origin="https://webon.agency"
+          curl -fsSL --retry 3 --max-time 30 "$origin/robots.txt" -o /tmp/agency-robots.txt
+          curl -fsSL --retry 3 --max-time 30 "$origin/sitemap.xml" -o /tmp/agency-sitemap.xml
+          grep -Fq "Sitemap: $origin/sitemap.xml" /tmp/agency-robots.txt
+
+          python3 - <<'PY' > /tmp/agency-urls.txt
+          import sys
+          from xml.etree import ElementTree as ET
+          root = ET.parse("/tmp/agency-sitemap.xml").getroot()
+          urls = [loc.text.strip() for loc in root.findall(".//{*}loc") if loc.text]
+          if not urls or any(not url.startswith("https://webon.agency/") for url in urls):
+              sys.exit("Sitemap contains no pages or URL on a different domain")
+          print("\n".join(urls))
+          PY
+
+          while IFS= read -r url; do
+            echo "Checking $url"
+            body="$(mktemp)"
+            curl -fsSL --retry 3 --max-time 30 "$url" -o "$body"
+            grep -qi '<title' "$body" || { echo "Missing title: $url"; exit 1; }
+            grep -qi 'name="description"' "$body" || { echo "Missing description: $url"; exit 1; }
+            grep -qi 'rel="canonical"' "$body" || { echo "Missing canonical: $url"; exit 1; }
+            grep -qi '<h1' "$body" || { echo "Missing H1: $url"; exit 1; }
+            grep -Fq 'https://webon.agency/' "$body" || { echo "Missing self-domain URL: $url"; exit 1; }
+            rm -f "$body"
+          done < /tmp/agency-urls.txt
+          echo "WebON Agency SEO health check OK"
