@@ -1,5 +1,5 @@
-# WebON Agency (US / UK)
+# WebON Agency (International English)
 
-English adaptation of the original WebON site, using independently copied assets. Staging only; GitHub Pages is disabled and the site has not been deployed to hosting.
+English-language WebON Agency website at https://webon.agency/. Independent assets and lead pipeline. GitHub Actions deploys the main branch to WebON Agency hosting.
 
-Before production: audit translations, approve complete portfolio, replace country-specific pricing, configure international lead backend and analytics, verify HTTPS, enable indexing.
+The site serves English-speaking businesses internationally; UK-specific GBP offers remain alongside the USD rates. Verify deployed pages and lead routing after changes. Monitor indexing in Google Search Console, where sitemap submission is not proof that a page is indexed.
