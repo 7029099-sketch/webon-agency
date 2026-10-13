@@ -52,6 +52,9 @@ jobs:
           php -l send-lead.php
           echo "English-site validation passed"
 
+      - name: Validate sitemap pages and SEO metadata
+        run: python3 scripts/seo_preflight.py
+
       - name: Configure pinned SSH host
         env:
           KNOWN_HOSTS: ${{ secrets.WEBON_AGENCY_SSH_KNOWN_HOSTS }}
