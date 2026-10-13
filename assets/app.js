@@ -47,7 +47,7 @@ document.addEventListener('click', (e) => {
   const href = link.getAttribute('href') || '';
   if (href.startsWith('/contacts.html')) {
     webonGtagEvent('contact_click', {
-      contact_method: 'telegram',
+      contact_method: 'contact_page',
       link_url: link.href
     });
   } else if (href.startsWith('mailto:')) {
