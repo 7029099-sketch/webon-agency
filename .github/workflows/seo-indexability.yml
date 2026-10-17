@@ -1,0 +1,144 @@
+name: SEO Indexability Guard
+
+on:
+  schedule:
+    - cron: '19 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seo-indexability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SEO_ORIGIN: 'https://webon.agency'
+      SEO_SITEMAPS: 'sitemap.xml'
+      SEO_VIDEO_SITEMAP: ''
+    steps:
+      - name: Check production indexing signals on all sitemap pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures as cf
+          import os
+          import sys
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          from html.parser import HTMLParser
+          
+          origin = os.environ["SEO_ORIGIN"].rstrip("/")
+          sitemaps = os.environ["SEO_SITEMAPS"].split()
+          video_sitemap = os.environ.get("SEO_VIDEO_SITEMAP", "")
+          ua = "Mozilla/5.0 (compatible; SEO-Indexability-Monitor/1.0)"
+          
+          def get(url):
+              request = urllib.request.Request(url, headers={"User-Agent": ua})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return response.status, response.geturl(), response.headers, response.read()
+          
+          class Metadata(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.canonicals = []
+                  self.noindex = False
+                  self.has_title = False
+                  self.has_description = False
+                  self.has_h1 = False
+          
+              def handle_starttag(self, tag, attributes):
+                  a = dict(attributes)
+                  if tag == "title":
+                      self.has_title = True
+                  if tag == "h1":
+                      self.has_h1 = True
+                  if tag == "meta":
+                      name = (a.get("name") or "").lower()
+                      content = (a.get("content") or "").lower()
+                      if name == "description" and content.strip():
+                          self.has_description = True
+                      if name in ("robots", "googlebot") and ("noindex" in content or "none" in content.split(",")):
+                          self.noindex = True
+                  if tag == "link" and "canonical" in (a.get("rel") or "").lower().split():
+                      self.canonicals.append(a.get("href", ""))
+          
+          def sitemap_urls(name):
+              url = origin + "/" + name
+              status, final, headers, body = get(url)
+              if status != 200 or final != url:
+                  raise ValueError(f"{url}: unexpected sitemap HTTP status or redirect to {final}")
+              root = ET.fromstring(body)
+              if root.tag.rsplit("}", 1)[-1] != "urlset":
+                  raise ValueError(f"{url}: expected urlset")
+              urls = [n.text.strip() for n in root.findall("./{*}url/{*}loc") if n.text]
+              if not urls:
+                  raise ValueError(f"{url}: no page URLs")
+              return urls
+          
+          def check(url):
+              errors = []
+              try:
+                  status, final, headers, body = get(url)
+                  if status != 200:
+                      errors.append(f"HTTP {status}")
+                  if final.rstrip("/") != url.rstrip("/"):
+                      errors.append(f"redirected to {final}")
+                  if "noindex" in (headers.get("X-Robots-Tag") or "").lower():
+                      errors.append("X-Robots-Tag noindex")
+                  meta = Metadata()
+                  meta.feed(body.decode("utf-8", errors="replace"))
+                  if meta.noindex:
+                      errors.append("HTML robots noindex")
+                  if meta.canonicals != [url]:
+                      errors.append(f"canonical mismatch: {meta.canonicals}")
+                  if not meta.has_title:
+                      errors.append("missing title")
+                  if not meta.has_description:
+                      errors.append("missing meta description")
+                  if not meta.has_h1:
+                      errors.append("missing H1")
+              except Exception as exc:
+                  errors.append(str(exc))
+              return url, errors
+          
+          errors = []
+          try:
+              robots_url = origin + "/robots.txt"
+              robots = get(robots_url)[3].decode("utf-8", errors="replace")
+              for name in sitemaps + ([video_sitemap] if video_sitemap else []):
+                  if origin + "/" + name not in robots:
+                      errors.append(f"robots.txt is missing {name} sitemap declaration")
+              urls = []
+              for name in sitemaps:
+                  urls.extend(sitemap_urls(name))
+              if len(set(urls)) != len(urls):
+                  errors.append("sitemap URLs duplicated across XML files")
+              if any(not u.startswith(origin + "/") for u in urls):
+                  errors.append("sitemap URL outside the canonical site")
+              if video_sitemap:
+                  vurl = origin + "/" + video_sitemap
+                  _, _, _, vb = get(vurl)
+                  vr = ET.fromstring(vb)
+                  if vr.tag.rsplit("}", 1)[-1] != "urlset" or not vr.findall(".//{*}video"):
+                      errors.append("video sitemap has no videos")
+                  for node in vr.findall("./{*}url"):
+                      loc = node.find("{*}loc")
+                      if loc is None or not loc.text or loc.text.strip() not in urls:
+                          errors.append("video sitemap page is missing from main sitemap")
+                  print(f"Video sitemap XML valid: {video_sitemap}")
+              print(f"Checking {len(urls)} sitemap page(s) on {origin}")
+              with cf.ThreadPoolExecutor(max_workers=6) as pool:
+                  for url, problems in pool.map(check, urls):
+                      if problems:
+                          errors.append(f"{url}: {', '.join(problems)}")
+          except Exception as exc:
+              errors.append(str(exc))
+          
+          if errors:
+              for error in errors:
+                  print("ERROR:", error, file=sys.stderr)
+              sys.exit(1)
+          print("SEO indexability checks passed")
+          
+          PY
