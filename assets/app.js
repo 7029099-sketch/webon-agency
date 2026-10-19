@@ -53,7 +53,7 @@ document.addEventListener('click', (e) => {
   } else if (href.startsWith('mailto:')) {
     webonGtagEvent('contact_click', {
       contact_method: 'email',
-      link_url: href.replace(/^mailto:/, '')
+      page_path: window.location.pathname // Avoid sending email addresses to Google Analytics
     });
   }
 });
