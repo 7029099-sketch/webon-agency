@@ -1,0 +1,22 @@
+name: Agency Lead Guard
+on:
+  pull_request:
+    paths:
+      - 'send-lead.php'
+      - 'agency-contact-validator.php'
+      - '.github/tests/agency-contact-validator-test.php'
+      - '.github/workflows/agency-lead-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  php-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Agency PHP and validate international contacts
+        run: |
+          php -l send-lead.php
+          php -l agency-contact-validator.php
+          php .github/tests/agency-contact-validator-test.php
+          grep -Fq "\$brand = 'WebON Agency';" send-lead.php
