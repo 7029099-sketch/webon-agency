@@ -1,5 +1,6 @@
 <?php
-// Central lead endpoint for WebON / VideoLive / LiveON. PHP 7.4+.
+// Dedicated lead endpoint for WebON Agency. PHP 7.4+.
+require_once __DIR__ . '/agency-contact-validator.php';
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
@@ -180,10 +181,8 @@ $eventType = strtolower(webon_first($data, array('event_type','eventType'), 'lea
 if (!in_array($eventType, array('lead','contact_click'), true)) $eventType = 'lead';
 $name = webon_first($data, array('name','leadName'));
 $phone = webon_first($data, array('phone','contact','telegram','leadPhone'));
-$brandRaw = webon_first($data, array('brand','site','project'), 'WebON');
-$brandMap = array('webon'=>'WebON','videolive'=>'VideoLive','liveon'=>'LiveON');
-$brandKey = strtolower(preg_replace('/[^a-z0-9]/i', '', $brandRaw));
-$brand = isset($brandMap[$brandKey]) ? $brandMap[$brandKey] : 'WebON';
+// The lead's brand is server-owned: a browser must not label an Agency enquiry as another site.
+$brand = 'WebON Agency';
 $service = webon_first($data, array('service','service_name'));
 $destination = webon_first($data, array('destination','contact_destination'));
 $siteType = webon_first($data, array('site_type','siteType','type'));
@@ -216,6 +215,7 @@ $lang = webon_first($data, array('lang'));
 $clientTime = webon_first($data, array('client_time'));
 
 if ($eventType === 'lead' && ($name === '' || $phone === '')) webon_json(array('ok'=>false,'error'=>'Name and online contact are required'), 422);
+if ($eventType === 'lead' && !agency_contact_valid($phone)) webon_json(array('ok'=>false,'error'=>'Enter a valid international phone, email or Telegram contact'), 422);
 
 $source = $utmSource; $medium = $utmMedium;
 if ($source === '' && ($gclid !== '' || $gbraid !== '' || $wbraid !== '')) { $source='google'; if ($medium==='') $medium='cpc'; }
@@ -257,8 +257,8 @@ if ($eventType === 'contact_click') {
 
 // WebON Agency email delivery: set WEBON_AGENCY_LEAD_EMAIL in hosting environment.
 // No mailbox credentials or client-provided values are embedded in the repository.
-// Only WebON form leads can use this independent email channel.
-if ($brand === 'WebON' && $eventType === 'lead') {
+// Only genuine Agency form leads can use this independent email channel.
+if ($brand === 'WebON Agency' && $eventType === 'lead') {
     $emailRecipient = trim((string)getenv('WEBON_AGENCY_LEAD_EMAIL'));
     if ($emailRecipient === '') $emailRecipient = '7029099@gmail.com';
     if ($emailRecipient !== '' && filter_var($emailRecipient, FILTER_VALIDATE_EMAIL)) {
