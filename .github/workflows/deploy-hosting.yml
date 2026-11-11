@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout site
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate English site and isolate domains
         shell: bash
@@ -134,3 +136,12 @@ jobs:
           curl -fLsS --max-time 30 https://webon.agency/landing-page.html -o /tmp/landing.html
           grep -Fq '/assets/agency-analytics.js?' /tmp/landing.html
           echo 'WebON Agency deployment verified'
+
+      - name: Notify IndexNow only about published changed pages
+        if: ${{ success() }}
+        continue-on-error: true
+        env:
+          INDEXNOW_HOST: 'webon.agency'
+          INDEXNOW_KEY: 'fc3e8bf3aef9462abb3bee0cd224ac1e'
+          INDEXNOW_BEFORE: ${{ github.event.before }}
+        run: python3 scripts/indexnow_changed.py
