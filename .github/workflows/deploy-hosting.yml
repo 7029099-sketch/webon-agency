@@ -73,16 +73,23 @@ jobs:
           assert 'G-MKC553PZE8' not in source, 'Do not mix Ukrainian WebON data'
           version = os.environ['ASSET_VERSION'][:12]
           tag = f'<script src="/assets/agency-analytics.js?v={version}" defer></script>'
+          sentry_url = 'https://js-de.sentry-cdn.com/6296ca9bc82f866c2a49717b296c1ecd.min.js'
+          sentry_tag = f'<script src="{sentry_url}" crossorigin="anonymous"></script>'
           count = 0
           for page in pathlib.Path('.').glob('*.html'):
               if page.name == 'telegram-group-setup.html':
                   continue
               html = page.read_text(encoding='utf-8')
-              if 'agency-analytics.js' in html:
-                  continue
               if not re.search(r'</head\s*>', html, re.I):
                   raise SystemExit(f'Missing closing head element: {page}')
-              html = re.sub(r'</head\s*>', lambda _: tag + '\n</head>', html, count=1, flags=re.I)
+              tags = []
+              if 'agency-analytics.js' not in html:
+                  tags.append(tag)
+              if sentry_url not in html:
+                  tags.append(sentry_tag)
+              if not tags:
+                  continue
+              html = re.sub(r'</head\s*>', lambda _: '\n'.join(tags) + '\n</head>', html, count=1, flags=re.I)
               page.write_text(html, encoding='utf-8')
               count += 1
           print(f'Agency GA4 injected into {count} public pages. Client demos excluded.')
@@ -129,12 +136,14 @@ jobs:
           curl -fLsS --retry 3 --max-time 30 https://webon.agency/ -o /tmp/webon-agency.html
           grep -qi 'webon' /tmp/webon-agency.html
           grep -Fq '/assets/agency-analytics.js?' /tmp/webon-agency.html
+          grep -Fq 'js-de.sentry-cdn.com/6296ca9bc82f866c2a49717b296c1ecd.min.js' /tmp/webon-agency.html
           curl -fLsS --max-time 30 https://webon.agency/assets/agency-analytics.js -o /tmp/agency-analytics.js
           grep -Fq 'G-P2MFSEQ1WD' /tmp/agency-analytics.js
           if grep -Fq 'G-MKC553PZE8' /tmp/agency-analytics.js; then echo 'Wrong WebON property' >&2; exit 1; fi
           curl -fLsS --max-time 30 https://webon.agency/robots.txt -o /tmp/robots.txt
           curl -fLsS --max-time 30 https://webon.agency/landing-page.html -o /tmp/landing.html
           grep -Fq '/assets/agency-analytics.js?' /tmp/landing.html
+          grep -Fq 'js-de.sentry-cdn.com/6296ca9bc82f866c2a49717b296c1ecd.min.js' /tmp/landing.html
           # Verify separate Clarity loader, consent policy and public legal disclosure.
           curl -fLsS --retry 3 --max-time 30 https://webon.agency/assets/agency-analytics.js -o /tmp/agency-ga4-live.js
           grep -F '/assets/clarity-agency.js' /tmp/agency-ga4-live.js > /dev/null || { echo 'Agency Clarity loader missing' >&2; exit 1; }
