@@ -132,6 +132,11 @@ jobs:
       - name: Verify live English website
         shell: bash
         run: |
+          # Shared hosting rejects curl's default User-Agent with HTTP 403.
+          # Keep real HTTP checks intact, using a browser-like UA validated in diagnostics.
+          curl() {
+            command curl -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' "$@"
+          }
           set -euo pipefail
           curl -fLsS --retry 3 --max-time 30 https://webon.agency/ -o /tmp/webon-agency.html
           grep -qi 'webon' /tmp/webon-agency.html
