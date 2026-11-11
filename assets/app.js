@@ -212,7 +212,7 @@ if (leadForm) {
       });
 
       const data = await response.json().catch(() => ({ok:false}));
-      if (!response.ok || !data.ok) throw new Error(data.error || 'send_failed');
+      if (!response.ok || data.ok !== true || data.delivered !== true) throw new Error(data.error || 'delivery_not_confirmed');
 
       webonGtagEvent('generate_lead', {
         form_name: 'lead_form',
