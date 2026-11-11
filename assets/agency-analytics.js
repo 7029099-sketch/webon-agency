@@ -19,6 +19,15 @@
   loader.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
   document.head.appendChild(loader);
 
+  // Independent WebON Agency Clarity loader; only tracks after visitor opt-in.
+  if (!window.__webonAgencyClarityScriptRequested) {
+    window.__webonAgencyClarityScriptRequested = true;
+    var clarityLoader = document.createElement('script');
+    clarityLoader.src = '/assets/clarity-agency.js?v=20261111';
+    clarityLoader.defer = true;
+    document.head.appendChild(clarityLoader);
+  }
+
   // Outbound contact intent is not a confirmed customer enquiry.
   // Do not send phone numbers, email addresses, or message content to GA4.
   document.addEventListener('click', function (event) {
