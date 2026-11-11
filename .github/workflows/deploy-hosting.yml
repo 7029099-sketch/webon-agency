@@ -132,6 +132,8 @@ jobs:
       - name: Verify live English website
         shell: bash
         run: |
+          CURL_USER_AGENT='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36'
+          curl() { command curl --user-agent "$CURL_USER_AGENT" "$@"; }
           # Shared hosting rejects curl's default User-Agent with HTTP 403.
           # Keep real HTTP checks intact, using a browser-like UA validated in diagnostics.
           curl() {
