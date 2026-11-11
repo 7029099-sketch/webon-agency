@@ -5,6 +5,10 @@ on:
     - cron: '53 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   seo-health:
     runs-on: ubuntu-latest
@@ -41,3 +45,41 @@ jobs:
             rm -f "$body"
           done < /tmp/agency-urls.txt
           echo "WebON Agency SEO health check OK"
+
+      - name: Record SEO monitor failure as issue
+        if: ${{ failure() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_LABEL: 'webon-agency'
+          WORKFLOW_NAME: 'daily-health.yml'
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="SEO alert: ${SITE_LABEL} / ${WORKFLOW_NAME}"
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          existing="$(gh issue list --repo "${GITHUB_REPOSITORY}" --state open --limit 100 --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            echo "Existing SEO alert #$existing; not creating a duplicate." >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue create --repo "${GITHUB_REPOSITORY}" --title "$title" --body "Automated read-only SEO check failed for **${SITE_LABEL}**. [Open failed workflow run]($url). Investigate the failed step before editing any site." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Resolve previous SEO monitor issue after recovery
+        if: ${{ success() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_LABEL: 'webon-agency'
+          WORKFLOW_NAME: 'daily-health.yml'
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="SEO alert: ${SITE_LABEL} / ${WORKFLOW_NAME}"
+          existing="$(gh issue list --repo "${GITHUB_REPOSITORY}" --state open --limit 100 --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "${GITHUB_REPOSITORY}" --comment "Automatic check recovered: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Resolved SEO monitor issue #$existing." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "SEO monitor healthy; no open alert." >> "$GITHUB_STEP_SUMMARY"
+          fi
