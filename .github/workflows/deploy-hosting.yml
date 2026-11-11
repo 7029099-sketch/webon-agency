@@ -135,6 +135,13 @@ jobs:
           curl -fLsS --max-time 30 https://webon.agency/robots.txt -o /tmp/robots.txt
           curl -fLsS --max-time 30 https://webon.agency/landing-page.html -o /tmp/landing.html
           grep -Fq '/assets/agency-analytics.js?' /tmp/landing.html
+          # Verify separate Clarity loader, consent policy and public legal disclosure.
+          curl -fLsS --retry 3 --max-time 30 https://webon.agency/assets/agency-analytics.js -o /tmp/agency-ga4-live.js
+          grep -F '/assets/clarity-agency.js' /tmp/agency-ga4-live.js > /dev/null || { echo 'Agency Clarity loader missing' >&2; exit 1; }
+          curl -fLsS --retry 3 --max-time 30 https://webon.agency/assets/clarity-agency.js -o /tmp/agency-clarity-live.js
+          grep -F 'zbzsi4k1by' /tmp/agency-clarity-live.js > /dev/null || { echo 'Agency Clarity project ID mismatch' >&2; exit 1; }
+          curl -fLsS --retry 3 --max-time 30 https://webon.agency/privacy.html -o /tmp/agency-privacy-live.html
+          grep -F 'Microsoft Clarity' /tmp/agency-privacy-live.html > /dev/null || { echo 'Agency Clarity privacy disclosure missing' >&2; exit 1; }
           echo 'WebON Agency deployment verified'
 
       - name: Notify IndexNow only about published changed pages
