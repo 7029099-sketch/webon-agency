@@ -46,7 +46,26 @@ jobs:
             grep -Fq 'https://webon.agency/' "$body" || { echo "Missing self-domain URL: $url"; exit 1; }
             rm -f "$body"
           done < /tmp/agency-urls.txt
-          echo "WebON Agency SEO health check OK"
+          # Read-only lead transport readiness and rejection tests, without notifying clients.
+          curl -fsSL --retry 2 --max-time 25 "$origin/send-lead.php" -o /tmp/agency-lead-health.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/agency-lead-health.json', encoding='utf-8') as stream:
+              health=json.load(stream)
+          for field in ('ok', 'telegram_ready', 'storage_ready'):
+              if health.get(field) is not True:
+                  raise SystemExit('WebON Agency lead health check failed: '+field)
+          PY
+          invalid_status="$(curl -sS --max-time 25 -o /tmp/agency-invalid-lead.json -w '%{http_code}' -X POST --data-urlencode 'name=' --data-urlencode 'phone=' "$origin/send-lead.php")"
+          test "$invalid_status" = "422"
+          python3 - <<'PY'
+          import json
+          with open('/tmp/agency-invalid-lead.json', encoding='utf-8') as stream:
+              response=json.load(stream)
+          if response.get('ok') is not False:
+              raise SystemExit('Agency invalid lead unexpectedly accepted')
+          PY
+          echo "WebON Agency SEO and form readiness OK"
 
       - name: Record SEO monitor failure as issue
         if: ${{ failure() }}
